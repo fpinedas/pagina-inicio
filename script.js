@@ -6,25 +6,14 @@ const API_BASE = "https://rss-backend-zne9.onrender.com/rss?url=";
 
 // 1. Inicializar base de datos con Dexie
 const db = new Dexie("InicioPersonalizado");
-db.version(2).stores({
+db.version(3).stores({
     enlaces: "++id,title,url",            // Enlaces guardados en Favoritos
     pestañas: "nombre, orden",            // Lista de pestañas con orden de creación
-    feeds: "++id,pestaña,url"             // RSS asociados a cada pestaña
+    feeds: "++id,pestaña,url",            // RSS asociados a cada pestaña
+    config: "clave"                       // Modo visual ("día" o "noche")
 });
 
 // 2. Crear pestaña por defecto si no hay ninguna
-/*
-async function initTabs() {
-    const pestañas = await db.pestañas.toArray();
-    if (pestañas.length === 0) {
-        await db.pestañas.add({ nombre: "Favoritos" });
-    }
-    for (const { nombre } of await db.pestañas.toArray()) {
-        crearPestaña(nombre);
-    }
-    openTab("Favoritos");
-}
-*/
 async function initTabs() {
     const pestañas = await db.pestañas.orderBy("orden").toArray();
 
@@ -37,16 +26,56 @@ async function initTabs() {
         crearPestaña(nombre);
     }
 
+    // Inicializar el botón de modo día/noche
+    await inicializarToggleModo();
+
+    // Activar pestaña por defecto
+
     openTab("Favoritos");
 }
-  
+
+// Guarda el modo visual seleccionado ("día" o "noche")
+async function aplicarModoVisual(modo) {
+    document.body.classList.toggle("modo-noche", modo === "noche");
+    const toggleBtn = document.getElementById("modoToggle");
+    if (toggleBtn) toggleBtn.innerText = modo === "noche" ? "☀️" : "🌙";
+    await db.config.put({ clave: "modo", valor: modo });
+}
+
+// Obtiene el último modo visual usado ("día" o "noche")
+async function obtenerModoVisual() {
+    const config = await db.config.get("modo");
+    return config?.valor || "día";
+}
+
+// "Toggle button" para cambiar el modo visual
+async function inicializarToggleModo() {
+    if (document.getElementById("modoToggle")) return;
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = "modoToggle";
+    toggleBtn.title = "Cambiar modo visual";
+
+    toggleBtn.onclick = async () => {
+        const modoActual = document.body.classList.contains("modo-noche") ? "noche" : "día";
+        const nuevoModo = modoActual === "noche" ? "día" : "noche";
+        await aplicarModoVisual(nuevoModo);
+    };
+
+    const toggleCard = document.createElement("div");
+    toggleCard.className = "tab-card";
+    toggleCard.appendChild(toggleBtn);
+    document.getElementById("tabs").appendChild(toggleCard);
+
+    const modo = await obtenerModoVisual();
+    await aplicarModoVisual(modo);
+}  
 
 // 3. Crear visualmente una pestaña
 function crearPestaña(nombre) {
     const tabs = document.getElementById("tabs");
 
     const tabWrapper = document.createElement("div");
-    // tabWrapper.className = "tab-wrapper";
     tabWrapper.className = "tab-card";
 
     const tabBtn = document.createElement("button");
@@ -68,7 +97,7 @@ function crearPestaña(nombre) {
         addRSSBtn.textContent = "➕";
         addRSSBtn.title = "Añadir RSS";
         addRSSBtn.onclick = () => addRSS(nombre);
-        tabWrapper.appendChild(addRSSBtn);        
+        tabWrapper.appendChild(addRSSBtn);
     } else {
         const addRSSBtn = document.createElement("button");
         addRSSBtn.textContent = "➕";
@@ -84,28 +113,11 @@ function crearPestaña(nombre) {
     }
 
     tabs.appendChild(tabWrapper);
-    // tabs.insertBefore(tabWrapper, tabs.firstChild);
 
     const contents = document.getElementById("tab-contents");
     const tabContent = document.createElement("div");
     tabContent.className = "tab-content";
     tabContent.id = nombre;
-
-    /*
-    const header = document.createElement("div");
-    header.className = "tab-header";
-    header.innerHTML = `<h2>${nombre}</h2>`;
-
-    if (nombre === "favoritos") {
-        header.innerHTML += `<button onclick=\"addTab()\">📁</button>`;
-        header.innerHTML += `<button onclick=\"addRSS('${nombre}')\">➕</button>`;
-    } else {
-        header.innerHTML += `<button onclick=\"addRSS('${nombre}')\">➕</button>`;
-        header.innerHTML += `<button onclick=\"removeTab('${nombre}')\">🗑️</button>`;
-      }
-
-    tabContent.appendChild(header);
-    */
 
     if (nombre === "Favoritos") {
         tabContent.innerHTML += `
@@ -138,9 +150,11 @@ function crearPestaña(nombre) {
                     await db.enlaces.clear();
                     await db.pestañas.clear();
                     await db.feeds.clear();
+                    await db.config.clear();
                     await db.enlaces.bulkAdd(config.enlaces || []);
                     await db.pestañas.bulkAdd(config.pestañas || []);
                     await db.feeds.bulkAdd(config.feeds || []);
+                    await db.config.bulkAdd(config.config || []);
                     location.reload();
                 });
             }
@@ -197,7 +211,7 @@ async function removeRSS(pestaña, url) {
     await db.feeds.where({ pestaña, url }).delete();
     cargarFeeds(pestaña);
 }
-  
+
 
 // 7. Cargar feeds por pestaña
 async function cargarFeeds(pestaña) {
@@ -209,27 +223,13 @@ async function cargarFeeds(pestaña) {
 }
 
 // 8. Exportar configuración
-/*
-async function exportConfig() {
-    const enlaces = await db.enlaces.toArray();
-    const pestañas = await db.pestañas.toArray();
-    const feeds = await db.feeds.toArray();
-    const json = JSON.stringify({ enlaces, pestañas, feeds }, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "configuracion.json";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-*/
 async function exportConfig() {
     const enlaces = await db.enlaces.toArray();
     const pestañas = await db.pestañas.orderBy("orden").toArray();
     const feeds = await db.feeds.toArray();
+    const config = await db.config.toArray();
 
-    const json = JSON.stringify({ enlaces, pestañas, feeds }, null, 2);
+    const json = JSON.stringify({ enlaces, pestañas, feeds, config }, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
