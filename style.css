@@ -217,3 +217,71 @@ a:hover {
     color: #444;
     margin: 0;
 }
+
+/* Selectores para modo "noche" */
+body.modo-noche {
+    background: #1e1e1e;
+    color: #eee;
+}
+
+body.modo-noche header {
+    background: #333;
+    color: #fff;
+}
+
+body.modo-noche .tabs {
+    background: #2b2b2b;
+}
+
+body.modo-noche .tab-card {
+    background: #2b2b2b;
+    border-color: #444;
+}
+
+body.modo-noche .tab-button {
+    background: #444;
+    color: #fff;
+}
+
+body.modo-noche .tab-button.active {
+    background: #005f73;
+    color: white;
+}
+
+body.modo-noche .tab-card button:hover {
+    background: #555;
+}
+
+body.modo-noche .link-section {
+    background: #2a2a2a;
+    color: #ddd;
+}
+
+body.modo-noche .link-section a {
+    color: #4da6ff;
+}
+
+body.modo-noche .import-export-buttons button {
+    background-color: #005f73;
+}
+
+body.modo-noche .import-export-buttons button:hover {
+    background-color: #007a99;
+}
+
+body.modo-noche .feed {
+    background: #2a2a2a;
+    color: #ddd;
+}
+
+body.modo-noche .feed-title a {
+    color: #ddd;
+}
+
+body.modo-noche .rss-title {
+    color: #4da6ff;
+}
+
+body.modo-noche .rss-description {
+    color: #bbb;
+}
