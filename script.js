@@ -315,103 +315,119 @@ function decodeHTML(html) {
 // Carga los "feeds", convertidos a JSON, y genera el HTML
 async function loadRSSFeeds(containerId, feedUrls) {
     const container = document.getElementById(containerId);
-    container.innerHTML = ""; // limpiar contenido anterior
+    container.innerHTML = "";
 
     for (const url of feedUrls) {
-        try {
-            const response = await fetch(`${API_BASE}${encodeURIComponent(url)}`)
+        const feedDiv = document.createElement("div");
+        feedDiv.className = "feed";
+        container.appendChild(feedDiv);
+        actualizarFeed(feedDiv, url);
+    }
+  }
 
-            const data = await response.json();
+// Función para actualizar un solo feed
+async function actualizarFeed(feedDiv, url) {
+    try {
+        const response = await fetch(`${API_BASE}${encodeURIComponent(url)}`)
+        const data = await response.json();
 
-            const feedDiv = document.createElement("div");
-            feedDiv.className = "feed";
+        // Limpia solo este feed
+        feedDiv.innerHTML = "";
 
-            const feedTitle = document.createElement("div");
-            feedTitle.className = "feed-title";
+        // Título
+        const feedTitle = document.createElement("div");
+        feedTitle.className = "feed-title";
 
-            const feedLink = document.createElement("a");
-            feedLink.href = data.feed.link || "#";
-            feedLink.textContent = data.feed.title || "Fuente RSS";
-            feedLink.target = "_blank";
-            feedLink.rel = "noopener noreferrer";
+        // Lado izquierdo: título
+        const left = document.createElement("div");
+        left.className = "feed-title-left";
 
-            // Botón para eliminar este RSS
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "🗑️";
-            deleteBtn.title = "Eliminar este RSS";
-            deleteBtn.onclick = async () => {
-                const confirmar = confirm("¿Deseas eliminar este feed RSS?");
-                if (!confirmar) return;
-                const pestaña = containerId.replace(/-feeds$/, "");
+        // Enlace del título
+        const link = document.createElement("a");
+        link.href = data.feed.link || "#";
+        link.textContent = data.feed.title || "Fuente RSS";
+        link.target = "_blank";
+
+        left.appendChild(link);
+
+        // Lado derecho: botones
+        const right = document.createElement("div");
+        right.className = "feed-title-right";
+
+        // Botón 🔄 actualizar
+        const refreshBtn = document.createElement("button");
+        refreshBtn.textContent = "🔄";
+        refreshBtn.title = "Actualizar feed";
+        refreshBtn.onclick = () => actualizarFeed(feedDiv, url);
+
+        // Botón 🗑️ eliminar
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑️";
+        deleteBtn.title = "Eliminar este RSS";
+        deleteBtn.onclick = async () => {
+            if (confirm("¿Deseas eliminar este feed RSS?")) {
+                const pestaña = feedDiv.parentElement.id.replace(/-feeds$/, "");
                 await removeRSS(pestaña, url);
-            };
+            }
+        };
 
-            feedTitle.appendChild(feedLink);
-            feedTitle.appendChild(deleteBtn);
-            feedDiv.appendChild(feedTitle);
+        right.appendChild(refreshBtn);
+        right.appendChild(deleteBtn);
 
+        feedTitle.appendChild(left);
+        feedTitle.appendChild(right);
 
-            // ORDENAR POR FECHA DESCENDENTE
-            const sortedItems = data.items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+        feedDiv.appendChild(feedTitle);
 
-            // for (const item of sortedItems.slice(0, 5)) { // Mostrar 5
-            for (const item of sortedItems) {
+        // ORDENAR POR FECHA DESCENDENTE
+        const sortedItems = data.items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
-                const entry = document.createElement("div");
-                entry.className = "rss-entry";
+        // for (const item of sortedItems.slice(0, 5)) { // Mostrar 5
+        for (const item of sortedItems) {
+            const entry = document.createElement("div");
+            entry.className = "rss-entry";
 
-                const thumbnail = item.thumbnail || item.enclosure?.link || "";
-                // Imagen
-                const imgContainer = document.createElement("div");
-                imgContainer.className = "rss-img";
-                if (thumbnail) {
-                    const img = document.createElement("img");
-                    img.src = thumbnail;
-                    img.alt = "thumbnail";
-                    // img.className = "rss-thumbnail";
-                    imgContainer.appendChild(img);
-                } else {
-                    imgContainer.style.display = "none"; // Ocultar si no hay imagen
-                }
-
-                // Cuerpo del "feed"
-                const contentDiv = document.createElement("div");
-                contentDiv.className = "rss-content";
-
-                // Título
-                const title = document.createElement("a");
-                title.className = "rss-title";
-                title.href = item.link;
-                title.target = "_blank";
-                if (item.title.length > 140) {
-                    title.innerHTML = decodeHTML(item.title.substring(0, 140) + "...");
-                } else {
-                    title.innerHTML = decodeHTML(item.title);
-                }
-
-                // Descripción
-                const desc = document.createElement("p");
-                desc.className = "rss-description";
-                if (item.description.length > 110) {
-                    desc.innerHTML = decodeHTML(item.description.substring(0, 110) + "..." || "");
-                } else {
-                    desc.innerHTML = decodeHTML(item.description || "");
-                }
-
-                contentDiv.appendChild(title);
-                contentDiv.appendChild(desc);
-
-                entry.appendChild(imgContainer);
-                entry.appendChild(contentDiv);
-                feedDiv.appendChild(entry);
+            // Imagen
+            const imgContainer = document.createElement("div");
+            imgContainer.className = "rss-img";
+            const thumbnail = item.thumbnail || item.enclosure?.link || "";
+            if (thumbnail) {
+                const img = document.createElement("img");
+                img.src = thumbnail;
+                img.alt = "thumbnail";
+                img.className = "rss-thumbnail";
+                imgContainer.appendChild(img);
+            } else {
+                imgContainer.style.display = "none"; // Ocultar si no hay imagen
             }
 
-            container.appendChild(feedDiv);
-        } catch (error) {
-            console.error("Error al cargar feed:", url, error);
+            // Cuerpo del "feed"
+            const contentDiv = document.createElement("div");
+            contentDiv.className = "rss-content";
+
+            // Título
+            const title = document.createElement("a");
+            title.className = "rss-title";
+            title.href = item.link;
+            title.target = "_blank";
+            title.innerHTML = decodeHTML(item.title.length > 120 ? item.title.slice(0, 140) + "..." : item.title);
+
+            // Descripción
+            const desc = document.createElement("p");
+            desc.className = "rss-description";
+            desc.innerHTML = decodeHTML(item.description?.slice(0, 110) + "..." || "");
+
+            contentDiv.appendChild(title);
+            contentDiv.appendChild(desc);
+
+            entry.appendChild(imgContainer);
+            entry.appendChild(contentDiv);
+            feedDiv.appendChild(entry);
         }
+    } catch (err) {
+        console.error("Error actualizando feed:", url, err);
     }
-}
+}  
 
 // Inicializar
 document.addEventListener("DOMContentLoaded", () => {
