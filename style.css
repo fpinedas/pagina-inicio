@@ -69,7 +69,6 @@ a:hover {
 
 .tab-content {
     display: none;
-    /* padding: 1em; */
     padding-top: 1em;
     padding-bottom: 1em;
     padding-right: 0em;
@@ -164,7 +163,6 @@ a:hover {
 
 .feed {
     background: white;
-    /* padding: 1em; */
     padding-left: 0.5em;
     padding-right: 0.5em;
     padding-top: 0.5em;
@@ -185,7 +183,6 @@ a:hover {
     top: 0;
     background: inherit;
     z-index: 2;
-    /* padding: 0.4em; */
     padding-top: 0.3em;
     padding-right: 0.5em;
     padding-bottom: 0.3em;
@@ -198,8 +195,8 @@ a:hover {
 
 .feed-title-left a {
     font-weight: bold;
-    text-decoration: none;
-    color: inherit; }
+    color: inherit; 
+}
 
 .feed-title-right button {
     margin-left: 0.3em;
@@ -240,7 +237,6 @@ a:hover {
     font-size: 0.9em;
     font-weight: bold;
     color: #0060b6;
-    /* margin: 0 0 0.5em; */
 }
 
 .rss-description {
@@ -308,10 +304,6 @@ body.modo-noche .feed {
 body.modo-noche .feed-title {
     background: #2a2a2a;
     border-bottom: 1px solid #444;
-}
-
-body.modo-noche .feed-title a {
-    color: #ddd;
 }
 
 body.modo-noche .feed-title-right button:hover {
