@@ -149,7 +149,9 @@ a:hover {
     flex: 2;
     display: grid;
     gap: 1em;
-    max-height: 700px;
+    /* La siguiente línea se retira después de la actualización
+       de Firefox 143.0.1 */
+    /* max-height: 700px; */
     padding-right: 0.5em;
 }
 
