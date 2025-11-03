@@ -1,6 +1,6 @@
 // const API_BASE = "https://api.rss2json.com/v1/api.json?rss_url="
-// const API_BASE = "http://localhost:5000/rss?url=";
-const API_BASE = "https://rss-backend-zne9.onrender.com/rss?url=";
+const API_BASE = "http://localhost:5015/rss?url=";
+// const API_BASE = "https://rss-backend-zne9.onrender.com/rss?url=";
 
 // script.js completo con configuración persistente usando IndexedDB (Dexie)
 
